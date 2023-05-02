@@ -75,7 +75,7 @@ colnames(all_cetaceans2)
 
 ```{r}
  coxph(formula = Surv(birthYear, statusyear, status2) ~ species2 + sex + accuracy + 
-         acquisition2 + captivity, data = all_cetaceans2)
+         acquisition2 + captivity + transfertype, data = all_cetaceans2)
 #coxph(formula = Surv(birthYear, statusyear, status2) ~ species, data = all_cetaceans2)
 ```
 
