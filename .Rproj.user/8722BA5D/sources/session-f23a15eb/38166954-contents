@@ -1,0 +1,93 @@
+---
+title: "Exam 2"
+author: "Joshua Wagner"
+format: pdf
+---
+
+```{r prep}
+library(MASS)
+library(tidymodels)
+library(Stat2Data)
+durham <- read.csv("data/durham_2020.csv")
+```
+
+## Q2.1
+The data for overall quality of life would be considered missing completely at random if somehow a subset of the survey responses were destroyed randomly such as in a natural disaster if the surveys were physical, or from a computer virus if the surveys were digital.
+
+The data for overall quality of life would be considered missing at random if those residents who self-identified as female were more diligent and paid closer attention while filling out the survey so that their surveys were more likely to have more complete data compared to the surveys filled out by residents who self-identified as male.
+
+The data for overall quality of life would be considered not missing at random if a certain subset of the population were statisticians by trade and thus filled out the survey more thoroughly so that they were more likely to have complete data compared to other survey responses.
+
+## Q2.2
+The first reason a multinomial model does not make sense for the desired analysis is that the outcome variable at hand is the overall quality of life in Durham which is a ordinal categorical variable. Multinomial regression is used to predict a nominal categorical outcome variable with options that do not have some sort of ordered or numeric relationship. When trying to predict ordinal categorical variables, what should instead be used is Ordinal Regression which is used to predict an outcome variable which has categories that follow some order or numerical relationship. The second reason why a multinomial model does not make sense for the desired analysis is that the independence of irrelevant alternatives assumption is not satisfied seeing that removing a category for overall quality of life could impact another observation's likelihood of being classified differently than it originally was. For instance, because it is a scale with a minimum of 1 and a maximum of 5, if the highest category of 5 (very satisfied) is removed, the likelihood of an observation being a 4 (satisfied) could increase since survey participants who are satisfied could simply be picking out the highest possible value for satisfaction. In this manner, the independence of irrelevant alternatives assumption is violated in that it is not the case that removing one category has no effect on the relative likelihood of being placed in a different category. 
+
+## Q2.3
+```{r q2_3a}
+durham2 <- transform(durham, city_serve = (qual_police + qual_fire + qual_ems + 
+      qual_public_transit + qual_water + qual_parks + qual_public_transit) / 7)
+mean(na.omit(durham2$city_serve))
+```
+
+```{r q2_3b}
+m1 <- polr(as.factor(qol_durham) ~ as.factor(qual_police) + as.factor(qual_fire) + 
+             as.factor(qual_ems) + as.factor(qual_public_transit) + 
+             as.factor(qual_water) + as.factor(qual_parks), data= durham)
+summary(m1)
+```
+```{r}
+exp(0.05613)
+```
+Respondents who rated gave Durham police a quality rating score of 2 have approximately 1.058 times the odds of having the next higher score for overall quality of life in Durham, while controlling for all other variables in the model.
+
+##Q3
+```{r q3_1a}
+durham3 <- transform(durham2, satisfied = ifelse(qol_durham > 3, 1, 0))
+```
+
+```{r q3_1b}
+m2 <- glm(satisfied ~ years_in_durham + rent_own + as.factor(overall_image) + 
+            city_serve, data = durham3)
+summary(m2)
+```
+
+```{r q3_2}
+exp(-0.002018)
+```
+```{r q3_3}
+emplogitplot1(satisfied ~ years_in_durham,
+              data = durham3,
+              ngroups = 10)
+```
+```{r q3_5}
+m2_aug <- augment(m2)
+m2_aug <- m2_aug %>% mutate(prob = exp(.fitted)/(1 + exp(.fitted)))
+arrange(m2_aug, desc(prob))
+```
+```{r q3_6a}
+m2_aug <- m2_aug %>% mutate(pred_sat = ifelse(prob > 0.5, "Satisfied", "Not Satisfied"))
+table(m2_aug$pred_sat, m2_aug$satisfied)
+```
+```{r q3_6b}
+156/(9+125+156)
+156/(156+0)
+9/(125+9)
+156/(156+125)
+9/(9+0)
+```
+```{r q3_7}
+m3 <- glm(satisfied ~ years_in_durham + rent_own + as.factor(overall_image) + city_serve + years_in_durham*rent_own, data = durham3)
+summary(m3)
+```
+```{r q3_8a}
+m4 <- polr(as.factor(qol_durham) ~ years_in_durham + rent_own + 
+             as.factor(overall_image) + city_serve, data = durham3)
+summary(m4)
+```
+```{r q3_8b}
+exp(-0.01589)
+```
+```{r q3_8c}
+exp(-0.01589 + -2.415*0.006579)
+exp(-0.01589 - -2.415*0.006579)
+```
+
