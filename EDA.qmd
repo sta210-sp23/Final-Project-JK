@@ -41,7 +41,8 @@ all_cetaceans2 <- all_cetaceans %>%
                                                      "Stillbirth") ~ "Born",
                                   acquisition %in% c("Capture", "Rescue") ~ 
                                     "Wild", 
-                                  acquisition %in% c("Unknown") ~ "Unknown"))
+                                  acquisition %in% c("Unknown") ~ "Unknown"))  %>%
+  mutate(species2 = ifelse(species == "Bottlenose", "Bottlenose", "Other"))
 
 colnames(all_cetaceans2)
 all_cetaceans2 <- all_cetaceans2[, c(1, 2, 3, 5, 4, 6, 16, 7, 8, 11, 12, 9, 10, 18, 13, 14, 15, 17)]
