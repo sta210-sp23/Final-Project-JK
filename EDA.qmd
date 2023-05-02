@@ -36,7 +36,12 @@ all_cetaceans2 <- all_cetaceans %>%
   mutate(status2 = case_when(status %in% c("Miscarriage", "Escaped (Found Dead)",
                                           "Died", "Stillbirth") ~ 1, 
                              status %in% c("Escaped", "Released", "Released?",
-                                           "Unknown", "Alive") ~ 0))
+                                           "Unknown", "Alive") ~ 0)) %>%
+  mutate(acquisition2 = case_when(acquisition %in% c("Born", "Miscarriage", 
+                                                     "Stillbirth") ~ "Born",
+                                  acquisition %in% c("Capture", "Rescue") ~ 
+                                    "Wild", 
+                                  acquisition %in% c("Unknown") ~ "Unknown"))
 
 colnames(all_cetaceans2)
 all_cetaceans2 <- all_cetaceans2[, c(1, 2, 3, 5, 4, 6, 16, 7, 8, 11, 12, 9, 10, 18, 13, 14, 15, 17)]
