@@ -19,8 +19,11 @@ survival_rates <- read_csv("data/survivalRates.csv")
 Data from [The Pudding](https://data.world/the-pudding/cetaceans). 
 
 ```{r}
+all_cetaceans$statusDate <- as.character(all_cetaceans$statusDate) 
+class(all_cetaceans$statusDate)
+
 all_cetaceans2 <- all_cetaceans %>%
-  mutate(statusDate2 = ifelse(status == "Alive", "2017-05-07", statusDate)) %>%
+  mutate(statusDate2 = ifelse(status == "Alive", "2017-05-07", all_cetaceans$statusDate)) %>%
   transform(statusyear = as.numeric(substr(statusDate2, 1, 4))) %>%
   mutate(age = statusyear - birthYear) %>%
   rename(transferdate = transferDate) %>%
