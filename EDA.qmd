@@ -19,33 +19,36 @@ survival_rates <- read_csv("data/survivalRates.csv")
 Data from [The Pudding](https://data.world/the-pudding/cetaceans). 
 
 ```{r}
-all_cetaceans$statusDate <- as.character(all_cetaceans$statusDate) 
-class(all_cetaceans$statusDate)
-
 all_cetaceans2 <- all_cetaceans %>%
-  mutate(statusDate2 = ifelse(status == "Alive", "2017-05-07", all_cetaceans$statusDate)) %>%
+  rename(transferdate = transferDate, 
+         transfertype = transfer, 
+         currentlocation = currently) %>%
+  mutate(statusDate2 = ifelse(status == "Alive", "2017-05-07", 
+                              all_cetaceans$statusDate)) %>%
   transform(statusyear = as.numeric(substr(statusDate2, 1, 4))) %>%
-  mutate(age = statusyear - birthYear) %>%
-  rename(transferdate = transferDate) %>%
-  rename(transfertype = transfer) %>%
-  rename(currentlocation = currently) %>%
-  mutate(originyear = as.numeric(substr(originDate, 1, 4))) %>%
-  mutate(captivity = (statusyear - originyear) / age) %>%
-  subset(select = -c(id, name, mother, father, region, COD, ...1, entryDate, 
-                     notes, statusDate)) %>%
-  mutate(status2 = case_when(status %in% c("Miscarriage", "Escaped (Found Dead)",
+  mutate(age = as.numeric(statusyear - birthYear),
+         originyear = as.numeric(substr(originDate, 1, 4)), 
+         captivity = (statusyear - originyear) / age,
+         status2 = case_when(status %in% c("Miscarriage", "Escaped (Found Dead)",
                                           "Died", "Stillbirth") ~ 1, 
                              status %in% c("Escaped", "Released", "Released?",
-                                           "Unknown", "Alive") ~ 0)) %>%
-  mutate(acquisition2 = case_when(acquisition %in% c("Born", "Miscarriage", 
+                                           "Unknown", "Alive") ~ 0), 
+         acquisition2 = case_when(acquisition %in% c("Born", "Miscarriage", 
                                                      "Stillbirth") ~ "Born",
                                   acquisition %in% c("Capture", "Rescue") ~ 
                                     "Wild", 
-                                  acquisition %in% c("Unknown") ~ "Unknown"))  %>%
-  mutate(species2 = ifelse(species == "Bottlenose", "Bottlenose", "Other"))
+                                  acquisition %in% c("Unknown") ~ "Unknown"),
+         species2 = ifelse(species == "Bottlenose", "Bottlenose", "Other"), 
+         error1 = ((originyear - birthYear) < 0), 
+         error2 = ((statusyear - birthYear) < 0),
+         transfer = ifelse(originLocation != currentlocation, 1, 0)) %>%
+  filter(error1 == FALSE, error2 == FALSE) %>%
+  subset(select = -c(id, name, mother, father, region, COD, ...1, entryDate, 
+                     notes, statusDate, transfers, error1, error2, status, 
+                     acquisition, species))
 
-colnames(all_cetaceans2)
-#all_cetaceans2 <- all_cetaceans2[, c(1, 2, 3, 5, 4, 6, 16, 7, 8, 11, 12, 9, 10, 18, 13, 14, 15, 17)]
+all_cetaceans2 <- all_cetaceans2[, c(16, 1, 2, 15, 3, 4, 12, 5, 6, 17, 8, 14, 9, 
+                                     10, 11, 13)]
 ```
 
 ## Data dictionary for `cetacean_deaths` data set
