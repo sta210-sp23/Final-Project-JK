@@ -10,74 +10,188 @@ format: pdf
 library(tidyverse)
 library(tidymodels)
 library(survival)
+library(survminer)
+library(ggplot2)
+library(ggfortify)
 
-acquisitions <- read_csv("data/acquisitions.csv")
 all_cetaceans <- read_csv("data/allCetaceanData.csv")
-survival_rates <- read_csv("data/survivalRates.csv")
 ```
 
 Data from [The Pudding](https://data.world/the-pudding/cetaceans). 
 
-```{r}
-all_cetaceans$statusDate <- as.character(all_cetaceans$statusDate) 
-class(all_cetaceans$statusDate)
+```{r, message = F, warning = F, echo = F}
+all_cetaceans$statusDate <- as.character(all_cetaceans$statusDate)
 
 all_cetaceans2 <- all_cetaceans %>%
-  mutate(statusDate2 = ifelse(status == "Alive", "2017-05-07", all_cetaceans$statusDate)) %>%
+  rename(foreigntransfer = transfer, 
+         currentlocation = currently) %>%
+  mutate(statusDate2 = ifelse(status == "Alive", "2017-05-07", 
+                              all_cetaceans$statusDate)) %>%
   transform(statusyear = as.numeric(substr(statusDate2, 1, 4))) %>%
-  mutate(age = statusyear - birthYear) %>%
-  rename(transferdate = transferDate) %>%
-  rename(transfertype = transfer) %>%
-  rename(currentlocation = currently) %>%
-  mutate(originyear = as.numeric(substr(originDate, 1, 4))) %>%
-  mutate(captivity = (statusyear - originyear) / age) %>%
-  subset(select = -c(id, name, mother, father, region, COD, ...1, entryDate, 
-                     notes, statusDate)) %>%
-  mutate(status2 = case_when(status %in% c("Miscarriage", "Escaped (Found Dead)",
+  mutate(age = as.numeric(statusyear - birthYear),
+         originyear = as.numeric(substr(originDate, 1, 4)), 
+         captivity = (statusyear - originyear) / age,
+         status2 = case_when(status %in% c("Miscarriage", "Escaped (Found Dead)",
                                           "Died", "Stillbirth") ~ 1, 
                              status %in% c("Escaped", "Released", "Released?",
-                                           "Unknown", "Alive") ~ 0)) %>%
-  mutate(acquisition2 = case_when(acquisition %in% c("Born", "Miscarriage", 
+                                           "Unknown", "Alive") ~ 0), 
+         acquisition2 = case_when(acquisition %in% c("Born", "Miscarriage", 
                                                      "Stillbirth") ~ "Born",
                                   acquisition %in% c("Capture", "Rescue") ~ 
                                     "Wild", 
-                                  acquisition %in% c("Unknown") ~ "Unknown")) %>%
-  mutate(species2 = ifelse(species == "Bottlenose", "Bottlenose", "Other"))
+                                  acquisition %in% c("Unknown") ~ "Unknown"),
+         species2 = ifelse(species == "Bottlenose", "Bottlenose", "Other"), 
+         error1 = ((originyear - birthYear) < 0), 
+         error2 = ((statusyear - birthYear) < 0),
+         transfer = ifelse(originLocation != currentlocation, 1, 0),
+         currentlocation2 = case_when(currentlocation == "Unknown" ~ "Unknown", 
+                                      currentlocation == "U.S. Navy" ~ "U.S. Navy",
+                                      currentlocation == "SeaWorld San Diego" ~ "SeaWorld San Diego", 
+                                      currentlocation == "SeaWorld Orlando" ~ "SeaWorld Orlando",
+                                      currentlocation %in% c("SeaWorld San Antonio", "Sea World San Antonio") ~ 
+                                        "SeaWorld San Antonio", 
+                                      currentlocation == "Dolphin Research Center" ~ "Dolphin Research Center",
+                                      currentlocation == "Discovery Cove" ~ "Discovery Cove",
+                                      currentlocation %in% c("Marineland of Florida", "Marineland Florida") ~
+                                                               "Marineland Florida",
+                                      currentlocation == "Miami Seaquarium" ~ "Miami Seaquarium",
+                                      currentlocation == "Marine Life Oceanarium" ~"Marine Life Oceanarium",
+                                      .default = "aOther")) %>%
+  filter(error1 == FALSE, error2 == FALSE) %>%
+  subset(select = -c(id, name, mother, father, region, COD, ...1, entryDate, 
+                     notes, statusDate, transfers, error1, error2, status, 
+                     acquisition, species))
 
-colnames(all_cetaceans2)
-#all_cetaceans2 <- all_cetaceans2[, c(1, 2, 3, 5, 4, 6, 16, 7, 8, 11, 12, 9, 10, 18, 13, 14, 15, 17)]
+all_cetaceans2 <- all_cetaceans2[, c(16, 1, 2, 15, 3, 4, 12, 5, 6, 18, 17, 8, 14, 9, 
+                                     10, 11, 13)]
 ```
 
-## Data dictionary for `cetacean_deaths` data set
+```{r}
+
+all_cetaceans2 %>%
+  count(captivity)
+
+all_cetaceans2$birthDate <- as.Date(paste(all_cetaceans2$birthYear, "-07", "-01", sep=""))
+all_cetaceans2$birthDate <- as.character(all_cetaceans2$birthDate) 
+all_cetaceans2$originDate <- as.character(all_cetaceans2$originDate)
+
+all_cetaceans2 <- all_cetaceans2 %>%
+  mutate(birthDate2 = ifelse(acquisition2 == "Wild", birthDate, originDate))
+
+all_cetaceans2$birthDate2 <- as.Date(all_cetaceans2$birthDate2)
+all_cetaceans2$originDate <- as.Date(all_cetaceans2$originDate)
+
+all_cetaceans2 <- all_cetaceans2 %>%
+  mutate(age2 = difftime(statusDate2, birthDate2, units = "day"),
+         captivity = difftime(statusDate2, originDate, units = "day"), 
+         captivity_prop = (as.numeric(captivity) / as.numeric(age2)))
+
+#all_cetaceans2 <- all_cetaceans2[, c(16, 1, 2, 15, 3, 4, 12, 5, 6, 17, 8, 14, 9, 
+#                                     10, 11, 13)]
+
+all_cetaceans %>%
+  count(COD) %>%
+  arrange(desc(n))
+
+all_cetaceans %>%
+  count(currently) %>%
+  arrange(desc(n))
+```
+
+## Data dictionary for `all_cetaceans2` data set
 
 | Variable        | Class     | Description                                                      	|
 |---------------- |---------- |------------------------------------------------------------------	|
 | species         | character | Species of animal (whale or dolphin)                             	|
 | sex             | character | Sex of animal                                                    	|
-| accuracy        | character | Accuracy of an animals' birthdate                               	|
-| acquisition     | character | Method through which an animal was brought into captivity       	|
+| accuracy        | character | Accuracy of an animal's birth date                               	|
+| acquisition2    | character | Method through which an animal was brought into captivity       	|
 | birthYear       | integer   | Year of birth                                                   	|
-| origindate      | integer   | Date that an animal was born into captivity, rescued, or captured |
+| originDate      | integer   | Date that an animal was born into captivity, rescued, or captured |
 | originyear      | integer   | Year that an animal was born into captivity, rescued, or captured |
 | originlocation	| character	| Location that an animal originated from                          	|
-| transfers       | character	| List of facilities an animal was transferred between             	|
-| transferdate    | integer   | Date of transfer into the US; NA for animals born in the US      	|
-| transfertype    | character | Whether an animal was transferred within the US or outside the US |
-| currentlocation | character	| Location of animal at date of recorded status                    	|
-| status          | character | Whether an animal was dead or alive at date of recorded status    |
+| currentlocation | character | Location of animal at date of recorded status                     |
+| transfer        | binary  	| Whether current location matches origin location                	|
+| foreigntransfer | character | Whether an animal was transferred from outside the US             |
 | status2         | binary    | Binary indicator for status (dead or alive)                       |
 | statusDate2     | integer   | Date of recorded status                                          	|
 | statusyear      | integer   | Year of recorded status                                         	|
 | age             | integer   | Age of animal at date of recorded status                          |
 | captivity       | integer   | Percentage of animal's life lived in captivity                    |
 
-
+## Exploratory data analysis
 
 ```{r}
- coxph(formula = Surv(birthYear, statusyear, status2) ~ species2 + sex + accuracy + 
-         acquisition2 + captivity, data = all_cetaceans2)
-#coxph(formula = Surv(birthYear, statusyear, status2) ~ species, data = all_cetaceans2)
+model_fit1 <- survfit(Surv(age, status2) ~ species2, 
+      data = all_cetaceans2)
+autoplot(model_fit1) + 
+ labs(x = "\n Survival time (years) ", y = "Survival probabilities \n", 
+ title = "Survival time of cetaceans in captivity by species", 
+ color = "Species")
+
+model_fit2 <- survfit(Surv(age, status2) ~ sex, 
+      data = all_cetaceans2)
+autoplot(model_fit2) + 
+ labs(x = "\n Survival time (years) ", y = "Survival probabilities \n", 
+ title = "Survival time of cetaceans in captivity by sex", 
+ color = "Sex")
+
+model_fit3 <- survfit(Surv(age, status2) ~ acquisition2, 
+      data = all_cetaceans2)
+autoplot(model_fit3) + 
+ labs(x = "\n Survival time (years) ", y = "Survival probabilities \n", 
+ title = "Survival time of cetaceans in captivity by acquisition method", 
+ color = "Acquisition method")
+
+model_fit4 <- survfit(Surv(age, status2) ~ transfer, 
+      data = all_cetaceans2)
+autoplot(model_fit4) + 
+ labs(x = "\n Survival time (years) ", y = "Survival probabilities \n", 
+ title = "Survival time of cetaceans in captivity by transfer status", 
+ color = "Transfer")
+
+model_fit5 <- survfit(Surv(age, status2) ~ foreigntransfer, 
+      data = all_cetaceans2)
+autoplot(model_fit5) + 
+ labs(x = "\n Survival time (years) ", y = "Survival probabilities \n", 
+ title = "Survival time of cetaceans in captivity by transfer type", 
+ color = "Transfer type")
+
+model_fit6 <- survfit(Surv(age, status2) ~ currentlocation2, 
+      data = all_cetaceans2)
+autoplot(model_fit6) + 
+ labs(x = "\n Survival time (years) ", y = "Survival probabilities \n", 
+ title = "Survival time of cetaceans in captivity by current location")
+
+all_cetaceans2 %>%
+  ggplot(mapping = aes(x = captivity)) +
+  geom_histogram(binwidth = 0.02) +
+  labs(x = "Percentage of life lived in captivity", y = "Count", 
+       title = "Most cetaceans live majority of their lives in captivity")
+
+all_cetaceans2 %>%
+  subset(select = c(age, status2, species2, sex, acquisition2, captivity,
+                    transfer, foreigntransfer)) %>%
+  tbl_summary() %>%
+  as_gt()
 ```
+Code for survival visualizations from [dkmathstats Website](https://dk81.github.io/dkmathstats_site/rvisual-kaplan-meier.html).
+
+
+## Model selection
+
+```{r}
+model1 <- coxph(formula = Surv(age, status2) ~ species2 + sex + 
+         acquisition2 + captivity + transfer + foreigntransfer + currentlocation2, 
+         data = all_cetaceans2)
+
+model1
+
+ggsurvplot(survfit(model1), data = all_cetaceans2, color = "#2E9FDF",
+           ggtheme = theme_minimal()) +
+  labs(title = "Survival rate of cetaceans in captivity", x = "Time (days)")
+```
+Code for visualization from [Statistical tools for high-throughput data analysis](http://www.sthda.com/english/wiki/cox-proportional-hazards-model)
 
 
 
