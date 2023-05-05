@@ -69,11 +69,9 @@ all_cetaceans2 <- all_cetaceans2[, c(16, 1, 2, 15, 3, 4, 12, 5, 6, 18, 17, 8, 14
                                      10, 11, 13)]
 ```
 
-## Introduction
+The `all_cetaceans2` data set used in this analysis contains information on 1,416 dolphins and whales living in captivity in the US between 1943 and 2017. Our analysis explores the relationship between cetacean survival rates in captivity and type of species, sex, whether animals were born in the wild or captivity, current location (as of the recorded status date), the percentage of animals’ life lived in captivity, whether animals were transferred between facilities during their lifetime, and whether the animals were transferred from foreign countries. Our research question asks, do animals that spend more of their lives in captivity live longer or shorter lives than animals that spend less of their lives in captivity? We hypothesize that animals that spend more of their lives in captivity will live shorter lives than animals that spend less of their lives in captivity. The results of our analysis could help inform best practices for holding dolphins and whales in captivity, and further could inform policies geared toward reducing cetacean fatalities in captivity.
 
-The `all_cetaceans2` data set used in this analysis contains information on 1,416 dolphins and whales living in captivity in the US between 1943 and 2017. Our analysis explores the relationship between cetacean survival rates in captivity and species, sex, whether animals were born in the wild or captivity, the percentage of animals’ life lived in captivity, location at date of recorded status, whether animals were transferred between facilities during their lifetime, and whether the animals were transferred from foreign countries. Our research question asks, do animals that spend more of their lives in captivity live longer or shorter lives than animals that spend less of their lives in captivity? We hypothesize that animals that spend more of their lives in captivity will live shorter lives than animals that spend less of their lives in captivity. The results of our analysis could help inform best practices for holding dolphins and whales in captivity, and further could inform policies geared toward reducing cetacean fatalities in captivity.
-
-Our data comes from an article in [The Pudding](https://pudding.cool/2017/07/cetaceans/) published by Amber Thomas in 2017 titled “Free Willy and Flipper by the Numbers” (@Pudding). Specifically, we use a data set titled `all_cetaceans2` which is a modified version of the `allCetaceanData` data set published on [Data.world](https://data.world/the-pudding/cetaceans/workspace/file?filename=allCetaceanData.csv) (@Data_world). The data were originally collected from the National Marine Mammal Inventory (curated by the National Oceanic and Atmospheric Administration) and the crowd-sourced website Ceta-Base (@Pudding). Starting with the `allCetaceanData` data set, we renamed several variables for clarity, mutated a new variable for status date that lists the status date for alive cetaceans as May 7, 2017 (the date at which each animal’s status was evaluated) opposed to NA, mutated a new variable for each cetacean’s age in years, mutated a new variable to describe the percentage of an animal’s life spent in captivity, simplified the status levels to dead or alive (e.g. stillborn animals were considered dead, released animals were considered alive), simplified the acquisition levels to born into captivity, wild, or unknown (e.g. stillborn animals were considered born into captivity, rescued animals were considered wild), simplified the species variable to bottlenose or not bottlenose (to reduce the original thirty-seven species levels to two), simplified the current location variable to the ten most common locations, and removed observations with impossible birth years relative to origin year and status year.
+Our data comes from an article in [The Pudding](https://pudding.cool/2017/07/cetaceans/) published by Amber Thomas in 2017 titled “Free Willy and Flipper by the Numbers” (@Pudding). Specifically, we use a data set titled `all_cetaceans2` which is a modified version of the `allCetaceanData` data set published on [Data.world](https://data.world/the-pudding/cetaceans/workspace/file?filename=allCetaceanData.csv) (@Data_world). The data were originally collected from the National Marine Mammal Inventory (curated by the National Oceanic and Atmospheric Administration) and the crowd-sourced website Ceta-Base (@Pudding). Starting with the `allCetaceanData` data set, we renamed several variables for clarity, mutated a new variable for status date that lists the status date for alive cetaceans as May 7, 2017 (the date at which each animal’s status was evaluated) opposed to NA, mutated a new variable for each cetacean’s age in years, mutated a new variable to describe the percentage of an animal’s life spent in captivity, simplified the status levels to dead or alive (e.g. stillborn animals were considered dead, released animals were considered alive), simplified the acquisition levels to born into captivity, wild, or unknown (e.g. stillborn animals were considered born into captivity, rescued animals were considered wild), simplified the species variable to bottlenose or not bottlenose (to reduce the original thirty-seven species levels to two), simplified the current location variable to the ten most common locations (to reduce the original eighty locations), and removed observations with impossible birth years relative to origin year and status year.
 
 The code book describing variables used in our analysis is below.
 
@@ -89,7 +87,9 @@ The code book describing variables used in our analysis is below.
 | age             | integer   | Age of animal at date of recorded status                          |
 | captivity       | integer   | Percentage of animal's life lived in captivity                    |
 
-We conducted exploratory data analysis on the relationship between our categorical variables of interest (species, sex, acquisition method, current location, transfer, and foreign transfer) and cetacean survival rates. Plots of Kaplan-Meier survival time curves for acquisition method, transfer, and current location as shown below suggest that 1) cetaceans born into captivity tend to have lower survival rates at the beginning of their lives and higher survival rates at the end of their lives when compared to cetaceans captured from the wild and 2) cetaceans transferred from one facility to another tend to have lower survival rates at the beginning of their lives and higher survival rates at the end of their lives when compared to cetaceans that aren’t transferred.
+We conducted exploratory data analysis on the relationship between our categorical variables of interest (species, sex, acquisition method, transfer status, foreign transfer, and current location) and cetacean survival rates. A plot of the Kaplan-Meier survival time curve for acquisition method shown below (Figure 1) suggests that cetaceans born into captivity tend to have lower survival rates at the beginning of their lives and greater survival rates at the end of their lives when compared to cetaceans captured from the wild. It appears that after 17 years, cetaceans born in captivity tend to outlive cetaceans captured from the wild. Figure 1 shows that the proportional hazards assumption may not be met since the hazard curves for cetaceans born in captivity and cetaceans captured from the wild are not proportional (the two lines cross at approximately 17 years). Also apparent is a steep fatality at age zero among cetaceans born into captivity. The steep fatality represents cetaceans that were born into captivity and died soon after birth (or were miscarried). The difference between survival of cetaceans born in captivity and those born in the wild at very young ages is likely exaggerated since only wild cetaceans that survive to a certain age are represented in the data set. The lack of representation of young deaths and stillbirths among cetaceans in the wild may account, in part, for the violation of the proportional hazards assumption.
+
+Figure 2 shows that the proportional hazards assumption is more reasonable for a variable that is not directly related to whether a cetacean was born in captivity or in the wild. The Kaplan-Meier survival curve in Figure 2 plots the survival rate by sex and shows that the survival times for male and female cetaceans appear to be roughly proportional.
 
 ### Figure 1
 
@@ -107,35 +107,22 @@ autoplot(model_fit3) +
 ### Figure 2
 
 ```{r, message = F, warning = F, echo = F, out.width = "80%"}
-model_fit4 <- survfit(Surv(age, status2) ~ transfer, 
+model_fit2 <- survfit(Surv(age, status2) ~ sex, 
       data = all_cetaceans2)
-autoplot(model_fit4) + 
+autoplot(model_fit2) + 
  labs(x = "\n Survival time (years) ", y = "Survival probabilities \n", 
- title = "Lower survival rate at beginning of life, higher at end of life 
- among cetaceans transferred between facilities", 
- subtitle = "Violation of proportional hazards assumption",
- color = "Transfer status")
-```
-
-### Figure 3
-
-```{r, message = F, warning = F, echo = F, out.width = "80%"}
-model_fit6 <- survfit(Surv(age, status2) ~ currentlocation2, 
-      data = all_cetaceans2)
-autoplot(model_fit6, conf.int = FALSE) + 
- labs(x = "\n Survival time (years) ", y = "Survival probabilities \n", 
- title = "Cetaceans currently at Discovery Cove have highest survival rate", 
-  subtitle = "Violation of proportional hazards assumption")
+ title = "Slightly higher cetacean survival rate among females than males", 
+ subtitle = "Proportional hazards assumption met",
+ color = "Sex")
 ```
 
 Code for survival visualizations from [dkmathstats Website](https://dk81.github.io/dkmathstats_site/rvisual-kaplan-meier.html) (@dkmathstats).
 
-
 ## Methodology
 
-We chose to fit a multivariable Cox proportional hazards model because we want to predict survival rates of cetaceans in captivity based on a mix of categorical, binary, and numeric variables. Thus, the Cox proportional hazards model proved most appropriate in how it allows one to “evaluate simultaneously the effect of several factors on survival” (@STHDA). We then evaluated whether or not the assumptions of the Cox Proportional-Hazards Model were violated for our data set. First, the independence of observations assumption is shown to be satisfied because knowing something about one Dolphin does not tell you anything about another that is not controlled for in the model. Secondly, the assumption for the Cox proportional hazards model that censoring and death are independent is shown to be satisfied seeing that death is categorized separately from the other methods by which a Dolphin could be censored such as it being released. As a result, no Dolphin could be categorized as both censored and dead and thus the two phenomena are independent. Finally, the proportional hazards assumption of the Cox proportional hazards model is shown to be violated in that the hazard curves of different groups cross … However, we will proceed on in spite of this but make sure to take note of it when interpreting our results.
+We chose to fit a multivariable Cox proportional hazards model because we want to predict survival rates of cetaceans in captivity based on a mix of categorical, binary, and numeric variables. Thus, the Cox proportional hazards model proved most appropriate in how it allows one to “evaluate simultaneously the effect of several factors on survival” (@STHDA). We then evaluated whether or not the assumptions of the Cox Proportional-Hazards Model were violated for our data set. First, the independence of observations assumption is shown to be satisfied because knowing something about one Dolphin does not tell you anything about another that is not controlled for in the model. Secondly, the assumption for the Cox proportional hazards model that censoring and death are independant is shown to be satisfied there is no relationship between an animal being censored and its survival. Namely, an animal being released or living past the end of the observation period and thus being censored from the study does not affect the likelihood of its survival. Finally, the proportional hazards assumption of the Cox proportional hazards model is shown to be violated in that the hazard curves of different groups cross. The proportional hazards assumption states that “the hazard of the event in any group is a constant multiple of the hazard in any other” and thus the hazard curves of different groups crossing violates this assumption seeing that the group’s hazard is no longer a constant multiple of another (“Cox Proportional-Hazards Model - Easy Guides - Wiki”). However, we will proceed on in spite of this but make sure to take note of it when interpreting our results.
 
-The outcome variable of interest in our model is lifespan, or the time between an animal’s birth and death. The time variable is `age` (in years) and the event of interest is `status2`, or the status of an animal as alive (0) or dead (1). In terms of predictors variables, then, we considered all unique, informative, and usable categorical and numeric variables in the `all_cetaceans2` data set. We identified species, sex, acquisition method, current location, transfer status, foreign transfer status, and captivity as meeting the criteria for predictors. Other variables found in the `allCetaceanData` data set such as mother, father, origin location, list of transfers, and cause of death had too many variable levels to use in the model.
+The outcome variable of interest in our model is the hazard rate, or the death rate of cetaceans in captivity. The time variable is `age` (in years) and the event of interest is `status2`, or the status of an animal as alive (0) or dead (1). In terms of predictors variables, then, we considered all unique, informative, and usable categorical and numeric variables in the `all_cetaceans2` data set. We identified species, sex, acquisition method, transfer status, foreign transfer status, and captivity as meeting the criteria for predictors. Other variables found in the `allCetaceanData` data set such as mother, father, origin location, list of transfers, and cause of death had too many variable levels to use in the model. We also included a simplified version of the current location variable in our model in order to control for differences in survival rate based on the facility where cetaceans are held in captivity and prevent a violation of independence, as mentioned above.
 
 ## Results
 
@@ -155,19 +142,25 @@ ggsurvplot(survfit(model1), data = all_cetaceans2, color = "#2E9FDF",
 
 Code for visualization from [Statistical tools for high-throughput data analysis](http://www.sthda.com/english/wiki/cox-proportional-hazards-model) (@STHDA).
 
-The model output shows that the predictors for species (Bottlenose), sex (male), sex (unknown), acquisition method (wild), percentage of life spent in captivity, transfer between US facilities, current location (Discovery Cove), current location (Marine Life Oceanarium), current location (Miami Seaquarium), current location (SeaWorld San Diego), and current location (U.S. Navy) all have significant p-values at the $\alpha$ = 0.05 significance level.
+The model output shows that the predictors for species (Bottlenose), sex (male), sex (unknown), acquisition method (wild), percentage of life spent in captivity, transfer between US facilities, current location (Discovery Cove), current location (Marine Life Oceanarium), current location (Miami Seaquarium), current location (SeaWorld San Diego), and current location (U.S. Navy) all have significant p-values at the $\alpha$ = 0.05 significance level. The p-value for the `captivity` variable was notably small at less than $2e^{-16}$.
 
-The p-value for the `captivity` variable is notably small at less than $2e^{-16}$. (Add interpretation of captivity variable here).
+To then analyze the results that directly pertain to our research question, we will interpret the captivity, acquisition method, and transfer status parameters. First, the parameter corresponding to `captivity` can be interpreted as meaning that a Dolphin that has lived in captivity 1% of its life more than another is expected to have $e^{-2.3513} \approx 0.095$ times the hazard of death than the other, while controlling for all other variables in the model. This result addresses our research question because it suggests that Dolphins which live in captivity actually tend to live longer lives. 
 
-What other variables do we want to interpret? Acquisition2 (Wild)? Transfer?
+Next, in looking at the categories of the `acquisition` parameters, the parameter corresponding to acquisition from the wild can be interpreted as meaning that a Dolphin that was taken from the wild into captivity is expected to have approximately $e^{-0.3089} \approx 0.734$ times the hazard of death compared to a Dolphin born into captivity, while controlling for all other variables in the model. Similarly, a Dolphin whose acquisition method is unknown is expected to have approximately $e^{-0.5234} \approx 0.593$ times the hazard of death compared to a Dolphin born into captivity, while controlling for all other variables in the model. Both of these results help us answer our research question because they have to do with how the animals entered captivity and thus shed light on the effects of captivity on the animals. Specifically, we learned that animals that were taken from the wild into captivity, or came into captivity through unknown means tended to live longer lives compared to those born into captivity. 
+
+Finally, the `transfer` parameter can be interpreted as meaning that a Dolphin whose current location does not match their origin location (whether the Dolphin was transferred at some point in its life) is expected to have approximately $e^{-0.4102} \approx 0.664$ times the hazard of death compared to a Dolphin whose current location does match their origin location. This result contributes to answering our research question because it sheds light on the effects of a specific attribute of captivity: being transferred. Namely, we learned that Dolphins that have been transferred at least once in their lives tend to live longer than those that are not. 
 
 ## Discussion
 
-Our model suggests that the longer a cetacean lives in captivity, the less likely it is to survive (not sure if this is our actual conclusion).
+Our model predicts that while controlling for all other variables in the model, cetaceans born in the wild tend to live longer in captivity than cetaceans born into captivity. Further, cetaceans living at a different location than their origin location (this includes cetaceans born in the wild and brought into captivity) tend to live longer than cetaceans that are living at the same location as their origin location (while holding all other variables constant). At the same time, the model predicts that cetaceans that live higher percentages of their lives in captivity tend to live longer than cetaceans that live lower percentages of their lives in captivity (while holding all other variables constant). These results do not support our hypothesis that cetaceans that spend more of their lives in captivity will live shorter lives than cetaceans that spend less of their lives in captivity. That said, there is evidence to suggest that being born in the wild but transferred into captivity at a young age may have some survival advantages.
+
+Our results may seem contradictory. As mentioned in the introduction, our interpretations and conclusions are limited by the fact that the data set we used doesn’t contain any observations of stillbirths,  miscarriages, or infant mortality that occur in the wild. Therefore, the difference between cetacean survival rates among cetaceans born in the wild and born into captivity at zero years of age is likely more extreme in our data set than in the population. If cetacean stillbirths, miscarriages, and infant mortality among wild cetaceans weren’t underrepresented in our data set, we might see that cetaceans born in the wild tend to live shorter lives than cetaceans in captivity across the board.
+
+Another limitation of our analysis is that we have reason to believe that some of the data in the `all_cetaceans2` data set is unreliable. We removed 84 observations with impossible birth dates relative to origin date or status date (e.g., the status date was listed as 2003 and the birth date was listed as 2009). These impossible observations suggest that there was human error involved in the collection of the data used in our analysis. The data set description in the article from [The Pudding](https://pudding.cool/2017/07/cetaceans/) states that some of the data was collected from the crowd-sourced website Ceta-Base. Further analysis may want to only consider data collected from verified sources to reduce human error and address the reliability issues of the data set used in our analysis.
 
 When initially considering how to select our predictor variables, we considered using a variable selection technique such as LASSO regression or all subset selection. However, in the case of LASSO regression we found that using LASSO as a means of selecting variables for a Cox model was relatively new and involved statistical principles which were beyond the scope of our current understanding (@Tibshirani). Similarly, in researching the feasibility of using all subset selection, we found that the answer to which variable selection technique is best for the Cox proportional hazards model is still up for debate (@Ekman_2017, @Fan_Li, @Petersson_Sehlstedt). Thus, to avoid misusing the appropriate variable selection technique for our project, we decided to instead use all of the unique, informative, and usable predictor variables from our data set in our model. As a result, it is possible that a more effective model could be derived if future researchers were to beforehand use one of the aforementioned variable selection techniques.
 
-Additionally, as mentioned in the methodology section, not all of the assumptions for the Cox Proportional Hazards Model were shown to be satisfied. Subsequently, the interpretations and conclusions we are able to draw from our model are inherently limited. Future work could be done with the data set so that the assumptions are not violated and more rigorous analysis can be performed.
+Additionally, as mentioned in the methodology section, not all of the assumptions for the Cox Proportional Hazards Model were shown to be satisfied. Subsequently, the interpretations and conclusions we are able to draw from our model are inherently limited. Future work could be done to address the assumption violations and perform a more rigorous analysis.
 
 ## Appendix 
 
@@ -181,12 +174,14 @@ autoplot(model_fit1) +
  title = "Survival time of cetaceans in captivity by species", 
  color = "Species")
 
-model_fit2 <- survfit(Surv(age, status2) ~ sex, 
+model_fit4 <- survfit(Surv(age, status2) ~ transfer, 
       data = all_cetaceans2)
-autoplot(model_fit2) + 
+autoplot(model_fit4) + 
  labs(x = "\n Survival time (years) ", y = "Survival probabilities \n", 
- title = "Survival time of cetaceans in captivity by sex", 
- color = "Sex")
+ title = "Lower survival rate at beginning of life, higher at end of life 
+ among cetaceans transferred between facilities", 
+ subtitle = "Violation of proportional hazards assumption",
+ color = "Transfer status")
 
 model_fit5 <- survfit(Surv(age, status2) ~ foreigntransfer, 
       data = all_cetaceans2)
@@ -200,6 +195,13 @@ all_cetaceans2 %>%
   geom_histogram(binwidth = 0.02) +
   labs(x = "Percentage of life lived in captivity", y = "Count", 
        title = "Most cetaceans live majority of their lives in captivity")
+
+model_fit6 <- survfit(Surv(age, status2) ~ currentlocation2, 
+      data = all_cetaceans2)
+autoplot(model_fit6, conf.int = FALSE) + 
+ labs(x = "\n Survival time (years) ", y = "Survival probabilities \n", 
+ title = "Cetaceans currently at Discovery Cove have highest survival rate", 
+  subtitle = "Violation of proportional hazards assumption")
 ```
 
 ## References
