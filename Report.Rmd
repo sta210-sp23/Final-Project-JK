@@ -137,7 +137,9 @@ knitr::kable(tidy(model1), digits = 4, col.names = c("Predictor", "Coefficient",
 
 ggsurvplot(survfit(model1), data = all_cetaceans2, color = "#2E9FDF",
            ggtheme = theme_minimal()) +
-  labs(title = "Survival rate of cetaceans in captivity", x = "Time (years)")
+  labs(title = "Rate of change for risk of death highest between 0 and 20 years of age",
+       subtitle = "Model predicts most cetaeans will die by age 40",
+       x = "Time (years)")
 ```
 
 Code for visualization from [Statistical tools for high-throughput data analysis](http://www.sthda.com/english/wiki/cox-proportional-hazards-model) (@STHDA).
